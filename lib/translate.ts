@@ -1,34 +1,24 @@
 import * as deepl from "deepl-node";
-import { TargetLanguageCode } from "deepl-node";
 
-export interface Translation {
-  translateText: (
-    text: string,
-    targetLang: TargetLanguageCode
-  ) => Promise<string>;
-}
+const translateKey = async (entry, locale) => {
+  // Avoid possible destructuring errors
+  if (!entry || !locale) return {};
 
-export class TranslateService implements Translation {
-  authKey = process.env.DEEPL_AUTH!;
-  translator: deepl.Translator;
+  // Access DeepL auth key
+  const authKey = process.env.DEEPL_API_KEY;
 
-  constructor() {
-    this.translator = new deepl.Translator(this.authKey);
-  }
+  // Early return for unauthenticated request
+  if (!authKey) throw new Error(`DeepL auth key not provided`);
 
-  translateText = async (text: string, targetLang: string): Promise<string> => {
-    if (targetLang === "en") targetLang = "en-US";
+  // Init translator
+  const translator = new deepl.Translator(authKey);
 
-    const results = await this.translator.translateText(
-      text,
-      null,
-      targetLang as TargetLanguageCode
-    );
+  // Translate the title
+  const translatedString = (await translator.translateText(
+    entry,
+    null,
+    locale as unknown as TargetLanguageCode
+  )) as deepl.TextResult;
 
-    return results.text;
-  };
-}
-
-const translateService = new TranslateService();
-
-export { translateService };
+  return translatedString.text;
+};
